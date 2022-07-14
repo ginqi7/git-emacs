@@ -51,7 +51,10 @@
 (defun git-checkout ()
   "List all branch and checkout a selected item"
   (interactive)
-  (run-git-cmd "branch" #'git-list-in-minibuffer "-a" "\"\""))
+  (run-git-cmd "branch" 
+               :sentinel #'git-list-in-minibuffer 
+               :options "-a" 
+               :grep-regex "\"\""))
 
 (defun git-show-diff-in-buffer (process signal)
   "List branch in minibuffer, And checkout branch when select a branch"
@@ -68,7 +71,10 @@
 (defun git-diff(&optional commit-id)
   "Show Diff between current status with the COMMIT-ID"
   (interactive "sCommit id: ")
-  (run-git-cmd "diff" #'git-show-diff-in-buffer commit-id "\"\""))
+  (run-git-cmd "diff" 
+               :sentinel #'git-show-diff-in-buffer
+               :options commit-id
+               :grep-regex "\"\""))
 
 (defun run-git-script (script)
   (start-process-shell-command "git-script" "git-script" script))
