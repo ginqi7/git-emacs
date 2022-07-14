@@ -81,5 +81,11 @@
     (message cmd)
     (run-git-script cmd)))
 
+(defun git-submit-current-file-m(msg)
+  "add current file to stage, and commit it with MSG, and push it to remote repository"
+  (interactive "sCommit Info: ")
+  (git-submit-file-m (buffer-file-name) msg)
+  )
+
 (provide 'git)
 ;;; git.el ends here
