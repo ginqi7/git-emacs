@@ -4,3 +4,36 @@ There is already an excellent Git client in the Emacs ecosystem, magit. But it d
 My needs:
 1. Can quickly invoke the common commands of git, without the need for a large number of configuration items to choose.
 2. Run git commands asynchronously without getting Emacs stuck.
+
+* Installing
+
+- clone the project in your own emacs configuration files directory, like:
+
+#+begin_src bash
+git clone git@github.com:ginqi7/git-emacs.git ~/.emacs.d/lisp/git-emacs
+#+end_src
+
+- add the path to ‘load-path’
+
+#+begin_src lisp
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/git-emacs"))
+#+end_src
+
+* Features
+- git checkout
+- git-log--oneline
+- git checkout -b
+- git diff
+- git submit current file
+- git submit selected file
+
+* Example
+** git checkout
+#+HTML: <p align="center"><img width="600px" src="./example/git-checkout.gif"></p>
+** git-log--oneline
+#+HTML: <p align="center"><img width="600px" src="./example/git-log--oneline.gif"></p>
+** git checkout -b
+** git diff
+#+HTML: <p align="center"><img width="600px" src="./example/git-diff.gif"></p>
+** git submit current file
+** git submit selected file
