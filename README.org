@@ -1,0 +1,6 @@
+There is already an excellent Git client in the Emacs ecosystem, magit. But it didn't quite suit my day-to-day development, so I tried to develop a git plugin that worked for me.
+
+
+My needs:
+1. Can quickly invoke the common commands of git, without the need for a large number of configuration items to choose.
+2. Run git commands asynchronously without getting Emacs stuck.
