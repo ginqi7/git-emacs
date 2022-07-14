@@ -16,15 +16,22 @@
     (setq git--asyn-process-output (concat git--asyn-process-output (remove-unuseful string)))))
 
 
-(defun run-git-cmd (command sentinel &optional options)
+(cl-defun run-git-cmd (command &optional &key sentinel options grep-regex)
   "Asyn run git shell command"
+  (message (format "options: {%s}, grep-regex: {%s}" options grep-regex))
   (setq git--asyn-process-output "")
   (let* ((process-name (concat "git-" command))
          (process-buffer-name (concat "*git-" command "*"))
-         (process (start-process-shell-command process-name process-buffer-name (concat "git " command " " options)))
-         )
+         (git-cmd (if grep-regex
+                      (concat "git " command " " options " | grep -i " grep-regex)
+                    (concat "git " command " " options)))
+         (process (start-process-shell-command process-name 
+                                               process-buffer-name 
+                                               git-cmd
+                                               )))
     (set-process-filter process 'git--output-to-local-buffer-variable)
-    (set-process-sentinel process sentinel)))
+    (when sentinel
+      (set-process-sentinel process sentinel))))
 
 
 (defun remove-remote-info (str)
@@ -39,13 +46,40 @@
     (let* ((output (split-string git--asyn-process-output "\n" t " +"))
            (branch (remove-remote-info (completing-read "branch: " output)))
            (command (concat "git checkout " branch)))
-      (message command)
       (start-process-shell-command "git-checkout" "git-checkout" command))))
 
 (defun git-checkout ()
   "List all branch and checkout a selected item"
   (interactive)
-  (run-git-cmd "branch" #'git-list-in-minibuffer "-a | grep \"\""))
+  (run-git-cmd "branch" #'git-list-in-minibuffer "-a" "\"\""))
+
+(defun git-show-diff-in-buffer (process signal)
+  "List branch in minibuffer, And checkout branch when select a branch"
+  (when (memq (process-status process) '(exit))
+    (let ((diff-info git--asyn-process-output)
+          (the-buffer (process-buffer process))
+          )
+      (with-current-buffer the-buffer
+        (erase-buffer)
+        (insert diff-info)
+        (diff-mode))
+      (switch-to-buffer the-buffer))))
+
+(defun git-diff(&optional commit-id)
+  "Show Diff between current status with the COMMIT-ID"
+  (interactive "sCommit id: ")
+  (run-git-cmd "diff" #'git-show-diff-in-buffer commit-id "\"\""))
+
+(defun run-git-script (script)
+  (start-process-shell-command "git-script" "git-script" script))
+
+
+(defun git-submit-file-m(file-name msg)
+  "Select a file that add to stage, and commit it with MSG, and push it to remote repository"
+  (interactive "fSelect commit file: \nsCommit Info: ")
+  (let ((cmd (concat "git add " file-name ";git commit -m \"" msg "\";git push")))
+    (message cmd)
+    (run-git-script cmd)))
 
 (provide 'git)
 ;;; git.el ends here
