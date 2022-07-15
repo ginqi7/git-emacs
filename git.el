@@ -71,7 +71,7 @@
 
 (defun git-checkout-b (new-branch-name)
   "git checkout -b NEW-BRANCH-NAME"
-  (interactive "sNew branch Name")
+  (interactive "sNew branch Name: ")
   (run-git-cmd "checkout" 
                :options  (concat "-b " new-branch-name)))
 
@@ -153,6 +153,20 @@
   "git pull"
   (interactive)
   (run-git-cmd "pull"))
+
+(defun git-delete-branch-by-name (branch-name)
+  (when (y-or-n-p (format "Are you sure you want to delete branch \"%s\" ?" branch-name))
+    (run-git-cmd "branch" 
+                 :options  (concat "-D " branch-name))))
+
+(defun git-delete-branch ()
+  "Select a branch and delete it"
+  (interactive)
+  (run-git-cmd "branch" 
+               :sentinel #'git-list-in-minibuffer 
+               :item-title "Branch"
+               :post-action #'git-delete-branch-by-name
+               :grep-regex "\"\""))
 
 (provide 'git)
 ;;; git.el ends here
