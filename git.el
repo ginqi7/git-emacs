@@ -27,6 +27,7 @@
          (process (start-process-shell-command process-name 
                                                process-buffer-name 
                                                git-cmd)))
+    (message git-cmd)
     (set-process-filter process 'git--output-to-local-buffer-variable)
     (when post-action
       (process-put process 'post-action-key post-action))
@@ -147,6 +148,11 @@
                :options "--oneline" 
                :item-title "Commit Id"
                :grep-regex "\"\""))
+
+(defun git-pull ()
+  "git pull"
+  (interactive)
+  (run-git-cmd "pull"))
 
 (provide 'git)
 ;;; git.el ends here
