@@ -72,7 +72,7 @@
 (defun git-checkout-b (new-branch-name)
   "git checkout -b NEW-BRANCH-NAME"
   (interactive "sNew branch Name")
-  (run-git-cmd "branch" 
+  (run-git-cmd "checkout" 
                :options  (concat "-b " new-branch-name)))
 
 (defun git-show-diff-in-buffer (process signal)
