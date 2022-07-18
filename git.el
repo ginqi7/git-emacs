@@ -4,7 +4,6 @@
 (require 'cl-lib)
 
 (setq git--asyn-process-output "") ; This variable is using for save shell output
-(make-local-variable 'git--asyn-process-output)
 
 (defun remove-unuseful (str)
   "Remove some unuseful char in STR"
