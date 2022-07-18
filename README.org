@@ -33,7 +33,12 @@ git clone git@github.com:ginqi7/git-emacs.git ~/.emacs.d/lisp/git-emacs
 ** git-log--oneline
 #+HTML: <p align="center"><img width="600px" src="./example/git-log--oneline.gif"></p>
 ** git checkout -b
+#+HTML: <p align="center"><img width="600px" src="./example/git-checkout-b.gif"></p>
 ** git diff
 #+HTML: <p align="center"><img width="600px" src="./example/git-diff.gif"></p>
 ** git submit current file
+#+HTML: <p align="center"><img width="600px" src="./example/git-submit-current-file.gif"></p>
 ** git submit selected file
+#+HTML: <p align="center"><img width="600px" src="./example/git-submit-selected-file.gif"></p>
+** git branch -D
+#+HTML: <p align="center"><img width="600px" src="./example/git-delete-branch.gif"></p>
