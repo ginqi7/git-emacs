@@ -66,7 +66,7 @@ PROC is current process.
 STRING is current output."
   (when (buffer-live-p (process-buffer proc))
     (process-put proc 'output
-                 (concat (process-get 'output proc) string))))
+                 (concat (process-get proc 'output) string))))
 
 
 (cl-defun run-git-cmd (command &optional &key sentinel post-action item-title options grep-regex)
@@ -235,6 +235,30 @@ BRANCH-NAME is the branch name needed to be deleted."
                :item-title "Branch"
                :post-action #'git-delete-branch-by-name
                :grep-regex "\"\""))
+
+(defun git-merge ()
+  "Select a branch and merge it into current branch."
+  (interactive)
+  (run-git-cmd "branch"
+               :sentinel #'git-list-in-minibuffer
+               :options "-a"
+               :item-title "Branch"
+               :post-action #'git-merge-branch
+               :grep-regex "\"\""))
+
+
+(defun format-remote-info (str)
+  "Format remote branch info.
+STR is remote branch name."
+  (string-trim-left str "remotes/"))
+
+(defun git-merge-branch (selected-item)
+  "Git merge selected branch.
+SELECTED-ITEM is a selected branch name."
+  (let ((command
+         (format "git merge --no-edit %s" (format-remote-info selected-item))))
+    (message command)
+    (start-process-shell-command "git-merge" "*git-merge*" command)))
 
 (provide 'git)
 ;;; git.el ends here
