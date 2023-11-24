@@ -26,24 +26,6 @@
 ;;
 ;; Below are complete command list:
 ;;
-;;  `git-checkout-b'
-;;    Git checkout -b NEW-BRANCH-NAME.
-;;    Keybinding: M-x git-checkout-b
-;;  `git-submit-file-m'
-;;    Select a file that add to stage.
-;;    Keybinding: M-x git-submit-file-m
-;;  `git-submit-current-file-m'
-;;    Add current file to stage.
-;;    Keybinding: M-x git-submit-current-file-m
-;;  `git-pull'
-;;    Git pull.
-;;    Keybinding: M-x git-pull
-;;  `git-delete-branch'
-;;    Select a branch and delete it.
-;;    Keybinding: M-x git-delete-branch
-;;  `git-merge'
-;;    Select a branch and merge it into current branch.
-;;    Keybinding: M-x git-merge
 ;;  `git-cherry-pick'
 ;;    Git cherry pick.
 ;;    Keybinding: M-x git-cherry-pick
@@ -53,6 +35,18 @@
 ;;  `git-diff'
 ;;    Git diff.
 ;;    Keybinding: M-x git-diff
+;;  `git-merge'
+;;    Git merge.
+;;    Keybinding: M-x git-merge
+;;  `git-delete-branch'
+;;    Git delete branch.
+;;    Keybinding: M-x git-delete-branch
+;;  `git-pull'
+;;    Git pull.
+;;    Keybinding: M-x git-pull
+;;  `git-checkout-b'
+;;    Git checkout -b NEW-BRANCH-NAME.
+;;    Keybinding: M-x git-checkout-b
 ;;
 ;;; Customizable Options:
 ;;
