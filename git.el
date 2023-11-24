@@ -20,30 +20,39 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Commands:
 ;;
 ;; Below are complete command list:
 ;;
-;;  `git-checkout'
-;;    List all branch and checkout a selected item.
 ;;  `git-checkout-b'
 ;;    Git checkout -b NEW-BRANCH-NAME.
-;;  `git-diff'
-;;    Select commit id and show diff between current status with the commit id.
-;;  `git-show'
-;;    Select commit id and show commit detail by id.
+;;    Keybinding: M-x git-checkout-b
 ;;  `git-submit-file-m'
 ;;    Select a file that add to stage.
+;;    Keybinding: M-x git-submit-file-m
 ;;  `git-submit-current-file-m'
 ;;    Add current file to stage.
-;;  `git-log--oneline'
-;;    Git log --oneline show in minibuffer.
+;;    Keybinding: M-x git-submit-current-file-m
 ;;  `git-pull'
 ;;    Git pull.
+;;    Keybinding: M-x git-pull
 ;;  `git-delete-branch'
 ;;    Select a branch and delete it.
+;;    Keybinding: M-x git-delete-branch
+;;  `git-merge'
+;;    Select a branch and merge it into current branch.
+;;    Keybinding: M-x git-merge
+;;  `git-cherry-pick'
+;;    Git cherry pick.
+;;    Keybinding: M-x git-cherry-pick
+;;  `git-checkout'
+;;    Git checkout.
+;;    Keybinding: M-x git-checkout
+;;  `git-diff'
+;;    Git diff.
+;;    Keybinding: M-x git-diff
 ;;
 ;;; Customizable Options:
 ;;
@@ -55,7 +64,7 @@
 (require 'cl-lib)
 (require 'ansi-color)
 
-(defun remove-unuseful (str)
+(defun git--remove-unuseful-str (str)
   "Remove some unuseful char in STR.
 STR is output string."
   (replace-regexp-in-string "[\015>=*]" "" (ansi-color-apply str)))
@@ -66,14 +75,16 @@ PROC is current process.
 STRING is current output."
   (when (buffer-live-p (process-buffer proc))
     (process-put proc 'output
-                 (concat (process-get proc 'output) string))))
+                 (concat
+                  (git--remove-unuseful-str
+                   (process-get proc 'output))
+                  (git--remove-unuseful-str string)))))
 
-
-(cl-defun run-git-cmd (command &optional &key sentinel post-action item-title options grep-regex)
+(cl-defun git--run-cmd (command &optional &key sentinel post-actions item-title options grep-regex)
   "Asyn run git shell command.
 COMMAND is git shell command.
 SENTINEL is process sentinel.
-POST-ACTION is a function after run when shell is finish.
+POST-ACTIONS is a function after run when shell is finish.
 ITEM-TITLE is ctable's title.
 OPTIONS is git shell commands.
 GREP-REGEX is git shell output grep regex."
@@ -89,21 +100,20 @@ GREP-REGEX is git shell output grep regex."
                                        git-cmd)))
     (message git-cmd)
     (set-process-filter process 'git--output-to-local-buffer-variable)
-    (when post-action
-      (process-put process 'post-action-key post-action))
+    (when post-actions
+      (process-put process 'post-actions-key post-actions))
     (when item-title
       (process-put process 'item-title-key item-title))
     (when sentinel (set-process-sentinel process sentinel))))
 
-
-(defun remove-remote-info (str)
+(defun git--remove-remote-info (str)
   "Remove remote branch info.
 STR is remote branch name."
   (if (string-prefix-p "remotes/" str)
       (mapconcat #'identity (cddr (split-string str "/" t " +")) "/")
     str))
 
-(defun git-list-in-minibuffer (process signal)
+(defun git--completing-read-sentinel (process signal)
   "List branch in minibuffer, And checkout branch when select a branch.
 PROCESS is current running process.
 SIGNAL is current running process' signal."
@@ -111,33 +121,21 @@ SIGNAL is current running process' signal."
     (let* ((output
             (split-string (process-get process 'output) "\n" t " +"))
            (item-title (process-get process 'item-title-key))
-           (post-action (process-get process 'post-action-key))
+           (post-actions (process-get process 'post-actions-key))
            (selected-item
             (completing-read (concat item-title ": ") output)))
-      (when post-action (apply post-action (list selected-item))))))
-
-(defun git-checkout-branch (selected-item)
-  "Git checkout selected branch.
-SELECTED-ITEM is a selected branch name."
-  (let ((command
-         (format "git checkout %s" (remove-remote-info selected-item))))
-    (message command)
-    (start-process-shell-command "git-checkout" "*git-checkout*" command)))
-
-(defun git-checkout ()
-  "List all branch and checkout a selected item."
-  (interactive)
-  (run-git-cmd "branch"
-               :sentinel #'git-list-in-minibuffer
-               :options "-a"
-               :item-title "branch"
-               :post-action #'git-checkout-branch
-               :grep-regex "\"\""))
+      (when post-actions
+        (print post-actions)
+        (apply
+         (car post-actions)
+         :arguments selected-item
+         :actions (list (cdr post-actions))
+         )))))
 
 (defun git-checkout-b (new-branch-name)
   "Git checkout -b NEW-BRANCH-NAME."
   (interactive "sNew branch Name: ")
-  (run-git-cmd "checkout" :options (concat "-b " new-branch-name)))
+  (git--run-cmd "checkout" :options (concat "-b " new-branch-name)))
 
 (defun git-show-diff-in-buffer (process signal)
   "List branch in minibuffer, And checkout branch when select a branch.
@@ -152,42 +150,18 @@ SIGNAL is current running process' signal"
         (diff-mode))
       (switch-to-buffer the-buffer))))
 
-
-(defun git-diff ()
-  "Select commit id and show diff between current status with the commit id."
-  (interactive)
-  (run-git-cmd "log"
-               :sentinel #'git-list-in-minibuffer
-               :options "--oneline"
-               :item-title "Commit Id"
-               :post-action #'git-diff-by-id
-               :grep-regex "\"\""))
-
-(defun git-show ()
-  "Select commit id and show commit detail by id."
-  (interactive)
-  (run-git-cmd "log"
-               :sentinel #'git-list-in-minibuffer
-               :options "--oneline"
-               :item-title "Commit Id"
-               :post-action #'git-diff-by-id
-               :grep-regex "\"\""))
-
-
-(defun git-diff-by-id (selected-item)
+(cl-defun git--diff-by-id (&optional &key arguments actions)
   "Show commit detail by id.
 SELECTED-ITEM contains commit it."
-  (run-git-cmd "show "
-               :sentinel #'git-show-diff-in-buffer
-               :options (car (split-string selected-item " +" nil))
-               :grep-regex "\"\""))
-
+  (git--run-cmd "show "
+                :sentinel #'git-show-diff-in-buffer
+                :options (car (split-string arguments " +" nil))
+                :grep-regex "\"\""))
 
 (defun run-git-script (script)
   "Run git script.
 SCRIPT is a git shell script."
   (start-process-shell-command "git-script" "git-script" script))
-
 
 (defun git-submit-file-m(file-name msg)
   "Select a file that add to stage.
@@ -209,56 +183,96 @@ MSG is commit message."
   (interactive "sCommit Info: ")
   (git-submit-file-m (buffer-file-name) msg))
 
-(defun git-log--oneline ()
-  "Git log --oneline show in minibuffer."
-  (interactive)
-  (run-git-cmd "log"
-               :sentinel #'git-list-in-minibuffer
-               :options "--oneline"
-               :item-title "Commit Id"
-               :grep-regex "\"\""))
+(defun git-pull () "Git pull." (interactive) (git--run-cmd "pull"))
 
-(defun git-pull () "Git pull." (interactive) (run-git-cmd "pull"))
-
-(defun git-delete-branch-by-name (branch-name)
+(defun git--delete-branch-by-name (&optional &key arguments actions)
   "Delete branch by name.
 BRANCH-NAME is the branch name needed to be deleted."
   (when (y-or-n-p
-         (format "Are you sure you want to delete branch \"%s\" ?" branch-name))
-    (run-git-cmd "branch" :options (concat "-D " branch-name))))
-
-(defun git-delete-branch ()
-  "Select a branch and delete it."
-  (interactive)
-  (run-git-cmd "branch"
-               :sentinel #'git-list-in-minibuffer
-               :item-title "Branch"
-               :post-action #'git-delete-branch-by-name
-               :grep-regex "\"\""))
-
-(defun git-merge ()
-  "Select a branch and merge it into current branch."
-  (interactive)
-  (run-git-cmd "branch"
-               :sentinel #'git-list-in-minibuffer
-               :options "-a"
-               :item-title "Branch"
-               :post-action #'git-merge-branch
-               :grep-regex "\"\""))
-
+         (format "Are you sure you want to delete branch \"%s\" ?" arguments))
+    (git--run-cmd "branch" :options (concat "-D " arguments))))
 
 (defun format-remote-info (str)
   "Format remote branch info.
 STR is remote branch name."
   (string-trim-left str "remotes/"))
 
-(defun git-merge-branch (selected-item)
+(cl-defun git--merge-branch (&optional &key arguments actions)
   "Git merge selected branch.
 SELECTED-ITEM is a selected branch name."
   (let ((command
-         (format "git merge --no-edit %s" (format-remote-info selected-item))))
+         (format "git merge --no-edit %s" (format-remote-info arguments))))
     (message command)
     (start-process-shell-command "git-merge" "*git-merge*" command)))
+
+(cl-defun git--select-branch (&optional &key arguments actions)
+  (git--run-cmd "branch"
+                :sentinel #'git--completing-read-sentinel
+                :options "-a"
+                :item-title "branch"
+                :post-actions actions
+                :grep-regex "\"\""))
+
+(cl-defun git--select-commit (&optional &key arguments actions)
+  (git--run-cmd "log"
+                :sentinel #'git--completing-read-sentinel
+                :options (concat "--oneline " arguments)
+                :item-title "commit id"
+                :post-actions actions
+                :grep-regex "\"\""))
+
+(cl-defun git--cherry-pick (&optional &key arguments actions)
+  (git--run-cmd "cherry-pick" :options arguments))
+
+(cl-defun git--checkout-branch (&optional &key arguments actions)
+  "Git checkout selected branch.
+SELECTED-ITEM is a selected branch name."
+  (let ((command
+         (format "git checkout %s" (git--remove-remote-info arguments))))
+    (message command)
+    (start-process-shell-command "git-checkout" "*git-checkout*" command)))
+
+(defun git--run-actions-chain (cmd-link)
+  "Run git cmd link."
+  (apply (car cmd-link) :actions (list (cdr cmd-link))))
+
+(defun git-cherry-pick ()
+  "Git cherry pick.
+1. Select another branch.
+2. Select a commit in the branch.
+3. Git cherry pick the commit."
+  (interactive)
+  (git--run-actions-chain
+   '(git--select-branch git--select-commit git--cherry-pick)))
+
+(defun git-checkout ()
+  "Git checkout.
+1. Select another branch.
+2. Checkout the branch."
+  (interactive)
+  (git--run-actions-chain '(git--select-branch git--checkout-branch)))
+
+(defun git-diff ()
+  "Git diff.
+1. Select a commit.
+2. Show diff between current status with the commit."
+  (interactive)
+  (git--run-actions-chain '(git--select-commit git--diff-by-id)))
+
+(defun git-merge ()
+  "Git merge.
+1. Select a branch.
+2. Merge the branch."
+  (interactive)
+  (git--run-actions-chain '(git--select-branch git--merge-branch)))
+
+(defun git-delete-branch ()
+  "Git delete branch.
+1. Select a branch.
+2. Delete the branch."
+  (interactive)
+  (git--run-actions-chain
+   '(git--select-branch git--delete-branch-by-name)))
 
 (provide 'git)
 ;;; git.el ends here
